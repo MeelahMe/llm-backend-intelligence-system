@@ -81,3 +81,27 @@ graph TD
   "summary": " High CPU usage detected on 'web-01'. Investigate application load and resource allocation."
 }
 ```
+## Scalability & Fault Tolerance
+
+    - Asynchronous queue avoids blocking request/response flow
+    - Retry logic built into Celery worker for failed LLM or webhook calls
+    - Deduplication layer avoids reprocessing identical alerts
+    - Docker-based deployment supports scaling by service
+
+    Future:
+
+        - Add Prometheus/Grafana monitoring
+        - Add circuit breakers for failing downstream LLMs
+
+## Future enhancements
+
+- Lightweight UI dashboard for alert visibility
+- Multi-LLM selection and performance benchmarking
+- Role-based access control (RBAC) for API keys
+- Cost tracking per alert and per LLM provider
+- Caching summaries for repeated alerts
+- Integration with incident tracking platforms (PagerDuty, OpsGenie)
+
+## Summary
+
+This system is designed to serve as a scalable, modular backend for real-time alert summarization and notification. It combines proven backend architecture patterns (queues, webhooks, modular services) with cutting-edge LLM integration to deliver meaningful value in modern operational environments.

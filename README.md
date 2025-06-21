@@ -107,3 +107,85 @@ once running, visit :
 
 - API docs: http://localhost:8000/docs
 - Health check: http://localhost:8000/health
+
+3. Setup for Docker
+
+Make sure your `.env` file is placed at the project root. The `docker-compose.yml` automatically loads this.
+
+```markdown
+OPENAI_API_KEY=your-key
+REDIS_URL=redis://redis:6379
+POSTGRES_URL=postgresql://postgres:postgres@db:5432/postgres
+SLACK_WEBHOOK_URL=https://hooks.slack.com/...
+LLM_PROVIDER=openai
+```
+## API reference
+
+Once running, visit:
+
+- OpenAPI Docs: `http://localhost:8000/docs`
+- Healthcheck: `GET /health`
+- Ingest alert: `POST /alerts`
+- Get summary: `GET /alerts/{alert_id}/summary`
+
+## Project structure
+
+```perl
+llm-backend-intelligence-system/
+├── app/
+│   ├── routes/          # API endpoints
+│   ├── services/        # LLM, Notifier, Queue
+│   ├── models/          # Pydantic & DB models
+│   ├── tasks/           # Background workers
+│   └── main.py          # FastAPI app instance
+├── tests/               # Unit tests
+├── system_design.md     # Architecture & system planning
+├── requirements.txt
+├── Dockerfile
+├── docker-compose.yml
+└── README.md
+```
+
+## Testing 
+
+This project uses `pytest` for unit testing and is structured to support test-driven development (TDD) across the API, services, and task queue layers.
+
+### Run Tests
+
+To run all tests:
+
+```bash
+pytest tests/
+```
+
+or run a specific test file:
+
+```bash
+pytest tests/test_alert_ingest.py
+```
+
+## Test coverage report 
+
+```bash
+pip install pytest-cov
+pytest --cov=app tests/
+```
+
+## Directory structure 
+
+```bash
+tests/
+├── conftest.py               # Shared fixtures
+├── test_alert_ingest.py      # Tests for POST /alerts
+├── test_summary_output.py    # LLM summarization tests (mocked)
+├── test_healthcheck.py       # Health route tests
+└── ...
+```
+
+## Testing notes
+
+- Use `conftest.py` for reusable fixtures (e.g., test clients, mock DBs)
+- LLM calls should be mocked during tests to avoid API costs and rate limits
+- Background tasks can be tested with Celery’s `Eager` mode or `AsyncMock`
+- All API contract changes should include updated tests
+

@@ -29,7 +29,7 @@ The LLM Backend Intelligence System is a modular, production-ready backend servi
 
 ## High-Level Architecture
 
-```mermaid
+```bash
 graph TD
     A[Alert Source (e.g. Prometheus)] -->|POST /alerts| B[FastAPI Backend]
     B --> C[Redis Queue]
@@ -55,3 +55,12 @@ Deployment Considerations
     - GitHub Actions for CI/CD (test and lint on push)
     - Support .env configuration for API keys and URLs
     - Optional k8s deployment file or Helm chart
+## API Contracts
+
+_TODO_
+
+
+## Future Enhancements
+
+_TODO_
+

@@ -40,7 +40,7 @@ graph TD
     B -->|GET /alerts, /health| F
 ```
 
-## Data Flow
+## Data flow
 
     - External service sends alert via POST /alerts
     - Alert is validated and enqueued
@@ -49,18 +49,35 @@ graph TD
     - Notifier pushes summary to Slack or webhook
     - Alert+summary are retrievable via GET /alerts/{id}
 
-Deployment Considerations
+## Deployment considerations
 
     - Docker Compose for local development
     - GitHub Actions for CI/CD (test and lint on push)
     - Support .env configuration for API keys and URLs
     - Optional k8s deployment file or Helm chart
-## API Contracts
 
-_TODO_
+## API contract
 
+`POST /alerts`
+```json
+{
+  "source": "prometheus",
+  "alert": "HighCPUUsage",
+  "labels": {
+    "instance": "web-01",
+    "severity": "warning"
+  },
+  "annotations": {
+    "description": "CPU usage has exceeded 85% for 10 minutes"
+  }
+}
+```
 
-## Future Enhancements
+`GET /alerts/{alert_id}/summary`
 
-_TODO_
-
+```json
+{
+  "alert_id": "1234-5678",
+  "summary": " High CPU usage detected on 'web-01'. Investigate application load and resource allocation."
+}
+```

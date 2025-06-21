@@ -1,8 +1,8 @@
 # LLM Backend Intelligence System
 
-LLM Backend Intelligence System is a production-ready backend service that transforms raw alerts from observability platforms into human-readable incident summaries using large language models (LLMs). This project helps DevOps and SRE teams reduce alert fatigue, accelerate incident triage, and improve operational awareness across complex systems.
+LLM Backend Intelligence System is a production-ready backend service that transforms raw alerts from observability platforms into  incident summaries using large language models (LLMs). This project helps DevOps and SRE teams reduce alert fatigue, accelerate incident triage, and improve operational awareness across complex systems.
 
-> Ingest alerts → Enrich context using LLMs → Push human-readable summaries via API or Slack
+> Ingest alerts → Enrich context using LLMs → Push summaries via API or Slack
 
 ---
 

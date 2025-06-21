@@ -1,54 +1,34 @@
-import os
-from typing import List, Dict
+# app/services/llm_client.py
 
+from abc import ABC, abstractmethod
+from typing import Dict, Any
 
-class LLMClient:
+from .base import LLMClient
+
+class LLMClient(ABC):
     """
-    LLMClient provides an abstraction for generating summaries using a language model.
-    It supports a mock mode for development and testing to avoid external API usage and costs.
+    Abstract base class for an LLM client.
+    Defines the interface that all concrete LLM clients must implement.
     """
 
-    def __init__(self):
-        # Read toggle from environment variable (default to True for safety)
-        self.use_mock = os.getenv("USE_MOCK_LLM", "true").lower() == "true"
-
-    def generate_summary(self, messages: List[Dict[str, str]]) -> str:
+    @abstractmethod
+    def summarize_alert(self, alert_data: Dict[str, Any]) -> str:
         """
-        Generate a summary based on the input conversation messages.
-
-        Args:
-            messages (List[Dict[str, str]]): A list of messages, each containing a 'role' and 'content'.
-
-        Returns:
-            str: The generated summary (mock or real depending on environment).
+        Generate a summary for the given alert data.
         """
-        if self.use_mock:
-            return self._generate_mock_summary(messages)
+        pass
 
-        # Placeholder for real LLM integration (e.g., OpenAI, Gemini, Claude)
-        return self._generate_real_summary(messages)
 
-    def _generate_mock_summary(self, messages: List[Dict[str, str]]) -> str:
-        """
-        Mock summary generator for testing and development.
+class MockLLMClient(LLMClient):
+    def summarize_alert(self, alert: dict) -> str:
+        source = alert.get("source", "unknown")
+        alert_name = alert.get("alert", "NoAlertName")
+        labels = alert.get("labels", {})
+        instance = labels.get("instance", "unknown")
+        severity = labels.get("severity", "info")
 
-        Args:
-            messages (List[Dict[str, str]]): Input conversation messages.
+        return (
+            f"[MOCK] {severity.upper()} alert '{alert_name}' detected on instance "
+            f"'{instance}' from source '{source}'. This is a generated summary."
+        )
 
-        Returns:
-            str: A mock summary response.
-        """
-        return "This is a mock summary for testing purposes."
-
-    def _generate_real_summary(self, messages: List[Dict[str, str]]) -> str:
-        """
-        Stub for real LLM call. Replace this with actual integration.
-
-        Args:
-            messages (List[Dict[str, str]]): Input conversation messages.
-
-        Returns:
-            str: The LLM-generated summary (once implemented).
-        """
-        # Example: Call to OpenAI ChatCompletion or Gemini
-        raise NotImplementedError("Real LLM integration is not yet implemented.")

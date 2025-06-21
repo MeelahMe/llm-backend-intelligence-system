@@ -4,7 +4,7 @@
 
 ## Overview
 
-The LLM Backend Intelligence System is a modular, production-ready backend service that transforms structured alerts from monitoring systems (e.g., Prometheus, Datadog) into actionable, human-readable summaries using large language models (LLMs). The system enables DevOps and SRE teams to reduce alert fatigue, accelerate triage, and improve cross-team visibility during incidents.
+The LLM Backend Intelligence System is a modular, production-ready backend service that transforms structured alerts from monitoring systems (e.g., Prometheus, Datadog) into actionable, summaries using large language models (LLMs). The system enables DevOps and SRE teams to reduce alert fatigue, accelerate triage, and improve cross-team visibility during incidents.
 
 ---
 

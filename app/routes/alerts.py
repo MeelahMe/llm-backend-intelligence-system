@@ -3,11 +3,12 @@
 from fastapi import APIRouter, Request, status
 from fastapi.responses import JSONResponse
 
-from app.services import LLMClient
+from app.services.factory import get_llm_client
+
 
 router = APIRouter()
 
-llm = LLMClient()  # Consider injecting this later for testability
+llm = get_llm_client()  
 
 @router.post("/alerts/", status_code=status.HTTP_200_OK)
 async def create_alert(request: Request):

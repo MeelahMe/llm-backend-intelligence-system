@@ -40,7 +40,7 @@ Send raw alert data from a monitoring system (e.g., Prometheus):
 Receive a summarized, LLM-generated explanation:
 
 {
-  "summary": "⚠️ Instance 'web-03' has been unresponsive for 5 minutes. This usually indicates a crash or network issue. Suggested action: SSH into the instance and check logs for nginx and systemd."
+  "summary": "Instance 'web-03' has been unresponsive for 5 minutes. This usually indicates a crash or network issue. Suggested action: SSH into the instance and check logs for nginx and systemd."
 }
 
 ## Architecture Overview

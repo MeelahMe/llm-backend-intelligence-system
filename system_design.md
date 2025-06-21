@@ -38,3 +38,20 @@ graph TD
     D --> F[PostgreSQL Database]
     D --> G[Slack / Webhook Notifier]
     B -->|GET /alerts, /health| F
+```
+
+## Data Flow
+
+    - External service sends alert via POST /alerts
+    - Alert is validated and enqueued
+    Worker dequeues and invokes the LLM summarizer
+    - Summary is stored in PostgreSQL
+    - Notifier pushes summary to Slack or webhook
+    - Alert+summary are retrievable via GET /alerts/{id}
+
+Deployment Considerations
+
+    - Docker Compose for local development
+    - GitHub Actions for CI/CD (test and lint on push)
+    - Support .env configuration for API keys and URLs
+    - Optional k8s deployment file or Helm chart

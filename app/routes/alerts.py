@@ -5,10 +5,8 @@ from fastapi.responses import JSONResponse
 
 from app.services.factory import get_llm_client
 
-
 router = APIRouter()
-
-llm = get_llm_client()  
+llm = get_llm_client()
 
 @router.post("/alerts/", status_code=status.HTTP_200_OK)
 async def create_alert(request: Request):
@@ -18,13 +16,7 @@ async def create_alert(request: Request):
     try:
         alert_data = await request.json()
 
-        # Construct prompt (for now, simple, later modularize)
-        messages = [
-            {"role": "system", "content": "You are a helpful assistant that summarizes alerts."},
-            {"role": "user", "content": f"Summarize this alert: {alert_data}"}
-        ]
-
-        summary = llm.generate_summary(messages)
+        summary = llm.summarize_alert(alert_data)
 
         return JSONResponse(
             status_code=status.HTTP_200_OK,

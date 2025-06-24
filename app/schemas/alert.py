@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 from typing import Dict, Optional
 
-class AlertRequest(BaseModel):
+class Alert(BaseModel):
     source: str
     alert: str
     labels: Dict[str, str]

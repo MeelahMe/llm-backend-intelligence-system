@@ -1,23 +1,15 @@
-from app.config.settings import settings
-
+import os
+from app.services.openai_llm import OpenAILLMClient
+from app.services.mock_llm import MockLLMClient
 
 def get_llm_client():
-    """
-    Factory function to return the appropriate LLM client based on settings.
-    """
-
-    if settings.use_mock_llm or settings.llm_provider == "mock":
-        from app.services.mock_llm import MockLLMClient
+    if os.getenv("USE_MOCK_LLM", "").lower() == "true":
         return MockLLMClient()
-
-    elif settings.llm_provider == "openai":
-        from app.services.openai_llm import OpenAILLMClient
-        return OpenAILLMClient(
-            api_key=settings.openai_api_key,
-            model=settings.openai_model,
-            temperature=settings.openai_temperature,
-            timeout=settings.openai_timeout,
-        )
-
-    else:
-        raise ValueError(f"Unsupported LLM provider: {settings.llm_provider}")
+    return OpenAILLMClient(
+        api_key=os.getenv("OPENAI_API_KEY"),
+        model=os.getenv("OPENAI_MODEL", "gpt-3.5-turbo"),
+        temperature=float(os.getenv("OPENAI_TEMPERATURE", 0.5)),
+        max_tokens=int(os.getenv("OPENAI_MAX_TOKENS", 100)),
+        timeout=int(os.getenv("OPENAI_TIMEOUT", 30)),
+    )
+   

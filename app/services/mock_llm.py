@@ -1,9 +1,9 @@
 class MockLLMClient:
-    def summarize_alert(self, alert_data: dict) -> dict:
+    def summarize_alert(self, source: str, alert: str, labels: dict, annotations: dict) -> dict:
         summary = (
-            f"[MOCK] {alert_data['labels'].get('severity', '').upper()} alert "
-            f"'{alert_data['alert']}' detected on instance '{alert_data['labels'].get('instance', '')}' "
-            f"from source '{alert_data['source']}'. This is a generated summary."
+            f"[MOCK] {labels.get('severity', '').upper()} alert "
+            f"'{alert}' detected on instance '{labels.get('instance', '')}' "
+            f"from source '{source}'. This is a generated summary."
         )
 
         return {

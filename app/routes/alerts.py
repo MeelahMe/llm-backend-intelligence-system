@@ -1,32 +1,35 @@
-from fastapi import APIRouter, Request, status
+from fastapi import APIRouter
 from fastapi.responses import JSONResponse
-from app.schemas.alert import Alert
-from app.schemas.response import AlertResponse
+import traceback
+
+from app.schemas import Alert
 from app.services.factory import get_llm_client
 
 router = APIRouter()
 llm = get_llm_client()
 
-@router.post("/alerts/", response_model=AlertResponse, status_code=status.HTTP_200_OK)
-async def create_alert(request: Request):
-    """
-    Receive an alert and generate a summarized response using LLM.
-    """
+@router.post("/alerts/")
+def create_alert(alert: Alert):
     try:
-        alert_data = await request.json()
-        result = llm.summarize_alert(alert_data)
+        result = llm.summarize_alert(
+            source=alert.source,
+            alert=alert.alert,
+            labels=alert.labels,
+            annotations=alert.annotations
+        )
 
+        # If result is a dict (like from mock), return as-is
         if isinstance(result, dict):
-            return {
-                "summary": result.get("summary"),
-                "token_usage": result.get("token_usage"),
-                "cost_usd": result.get("cost_usd")
-            }
+            return result
 
-        return {"summary": result}
+        # If result is just a string (like from real OpenAI), wrap it
+        return {
+            "summary": result
+        }
 
     except Exception as e:
+        traceback.print_exc()
         return JSONResponse(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            content={"error": str(e)}
+            status_code=500,
+            content={"error": "Internal Server Error", "detail": str(e)}
         )

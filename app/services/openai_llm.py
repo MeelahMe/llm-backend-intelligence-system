@@ -1,75 +1,50 @@
-import openai
-from app.prompts.prompt_engineering import PromptBuilder
+import logging
+from openai import OpenAI, OpenAIError
+
+logger = logging.getLogger(__name__)
 
 
 class OpenAILLMClient:
-    """
-    Handles communication with the OpenAI ChatCompletion API.
-    """
-
-    def __init__(self, api_key: str, model: str, temperature: float, timeout: int):
-        self.api_key = api_key
+    def __init__(
+        self,
+        api_key: str = None,
+        model: str = "gpt-3.5-turbo",
+        temperature: float = 0.5,
+        max_tokens: int = 100,
+        timeout: int = 30
+    ):
         self.model = model
         self.temperature = temperature
+        self.max_tokens = max_tokens
         self.timeout = timeout
 
-        openai.api_key = self.api_key
+        # Pass timeout via configuration (if needed)
+        self.client = OpenAI(api_key=api_key, timeout=timeout) if api_key else OpenAI(timeout=timeout)
 
-    def summarize_alert(self, alert_data: dict) -> dict:
-        """
-        Summarizes an incoming alert using the configured OpenAI model.
+    def summarize_alert(self, source: str, alert: str, labels: dict, annotations: dict) -> str:
+        try:
+            message = (
+                f"A new alert has been triggered from source '{source}'.\n\n"
+                f"**Alert:** {alert}\n"
+                f"**Labels:** {labels}\n"
+                f"**Annotations:** {annotations}\n\n"
+                f"Generate a short human-readable summary in one sentence for this alert."
+            )
 
-        Returns:
-            dict: {
-                summary: str,
-                token_usage: dict,
-                cost_usd: float
-            }
-        """
-        prompt = PromptBuilder.build_alert_summary_prompt(alert_data)
+            response = self.client.chat.completions.create(
+                model=self.model,
+                messages=[
+                    {"role": "system", "content": "You are an assistant that summarizes monitoring alerts for DevOps teams."},
+                    {"role": "user", "content": message}
+                ],
+                temperature=self.temperature,
+                max_tokens=self.max_tokens
+            )
 
-        response = openai.ChatCompletion.create(
-            model=self.model,
-            temperature=self.temperature,
-            messages=[
-                {"role": "system", "content": "You are an expert site reliability engineer."},
-                {"role": "user", "content": prompt}
-            ],
-            request_timeout=self.timeout
-        )
+            return response.choices[0].message.content.strip()
 
-        summary = response["choices"][0]["message"]["content"].strip()
-        usage = response.get("usage", {})
+        except OpenAIError as e:
+            logger.error(f"[OpenAI] Exception: {e}")
+            return "[ERROR] Failed to generate summary."
 
-        # Estimate cost if token usage is available
-        cost_usd = self._estimate_cost(usage)
-
-        return {
-            "summary": summary,
-            "token_usage": usage,
-            "cost_usd": cost_usd
-        }
-
-    def _estimate_cost(self, usage: dict) -> float:
-        """
-        Estimate the OpenAI cost in USD based on token usage.
-        Pricing: https://openai.com/pricing
-        """
-        prompt_tokens = usage.get("prompt_tokens", 0)
-        completion_tokens = usage.get("completion_tokens", 0)
-
-        # Prices (USD / 1K tokens)
-        if "gpt-4" in self.model:
-            prompt_price = 0.03
-            completion_price = 0.06
-        else:
-            prompt_price = 0.0015  # e.g., gpt-3.5-turbo
-            completion_price = 0.002
-
-        cost = (
-            (prompt_tokens / 1000) * prompt_price
-            + (completion_tokens / 1000) * completion_price
-        )
-
-        return round(cost, 6)
 

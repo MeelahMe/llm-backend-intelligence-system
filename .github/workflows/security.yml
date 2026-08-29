@@ -18,6 +18,9 @@ jobs:
       - run: pytest -v
         env:
           PYTHONPATH: ${{ github.workspace }}
+          USE_MOCK_LLM: "true"
+          LLM_PROVIDER: mock
+          OPENAI_API_KEY: sk-xxxx-ci-placeholder
 
   secrets-scan:
     runs-on: ubuntu-latest

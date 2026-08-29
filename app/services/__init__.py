@@ -1,4 +1,4 @@
 from dotenv import load_dotenv
-from .llm_client import LLMClient
+from .base import LLMClient as LLMClient
 
 load_dotenv()

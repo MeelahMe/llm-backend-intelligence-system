@@ -3,6 +3,7 @@
 from abc import ABC, abstractmethod
 from typing import Dict
 
+
 class LLMClient(ABC):
     @abstractmethod
     def summarize_alert(self, alert: Dict) -> str:
@@ -10,4 +11,3 @@ class LLMClient(ABC):
         Generate a summary for the given alert dictionary.
         """
         pass
-

@@ -11,7 +11,7 @@ class OpenAILLMClient:
         model: str = "gpt-3.5-turbo",
         temperature: float = 0.5,
         max_tokens: int = 100,
-        timeout: int = 30
+        timeout: int = 30,
     ):
         self.model = model
         self.temperature = temperature
@@ -19,9 +19,15 @@ class OpenAILLMClient:
         self.timeout = timeout
 
         # Pass timeout via configuration (if needed)
-        self.client = OpenAI(api_key=api_key, timeout=timeout) if api_key else OpenAI(timeout=timeout)
+        self.client = (
+            OpenAI(api_key=api_key, timeout=timeout)
+            if api_key
+            else OpenAI(timeout=timeout)
+        )
 
-    def summarize_alert(self, source: str, alert: str, labels: dict, annotations: dict) -> str:
+    def summarize_alert(
+        self, source: str, alert: str, labels: dict, annotations: dict
+    ) -> str:
         try:
             message = (
                 f"A new alert has been triggered from source '{source}'.\n\n"
@@ -34,11 +40,14 @@ class OpenAILLMClient:
             response = self.client.chat.completions.create(
                 model=self.model,
                 messages=[
-                    {"role": "system", "content": "You are an assistant that summarizes monitoring alerts for DevOps teams."},
-                    {"role": "user", "content": message}
+                    {
+                        "role": "system",
+                        "content": "You are an assistant that summarizes monitoring alerts for DevOps teams.",
+                    },
+                    {"role": "user", "content": message},
                 ],
                 temperature=self.temperature,
-                max_tokens=self.max_tokens
+                max_tokens=self.max_tokens,
             )
 
             return response.choices[0].message.content.strip()
@@ -46,5 +55,3 @@ class OpenAILLMClient:
         except OpenAIError as e:
             logger.error(f"[OpenAI] Exception: {e}")
             return "[ERROR] Failed to generate summary."
-
-

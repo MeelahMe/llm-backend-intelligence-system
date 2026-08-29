@@ -13,21 +13,18 @@ client = TestClient(app)
 os.environ["USE_MOCK_LLM"] = "false"
 os.environ["LLM_PROVIDER"] = "openai"
 
+
 @pytest.mark.skipif(
-    os.getenv("OPENAI_API_KEY", "").startswith("sk-xxxx") or os.getenv("USE_MOCK_LLM", "").lower() == "true",
-    reason="Skipping real OpenAI API test unless a valid key is set and USE_MOCK_LLM is false"
+    os.getenv("OPENAI_API_KEY", "").startswith("sk-xxxx")
+    or os.getenv("USE_MOCK_LLM", "").lower() == "true",
+    reason="Skipping real OpenAI API test unless a valid key is set and USE_MOCK_LLM is false",
 )
 def test_openai_llm_create_alert():
     payload = {
         "source": "prometheus",
         "alert": "HighCPUUsage",
-        "labels": {
-            "instance": "web-01",
-            "severity": "critical"
-        },
-        "annotations": {
-            "description": "CPU usage above 90% for 5 minutes"
-        }
+        "labels": {"instance": "web-01", "severity": "critical"},
+        "annotations": {"description": "CPU usage above 90% for 5 minutes"},
     }
 
     response = client.post("/alerts/", json=payload)

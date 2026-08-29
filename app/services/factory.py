@@ -2,6 +2,7 @@ import os
 from app.services.openai_llm import OpenAILLMClient
 from app.services.mock_llm import MockLLMClient
 
+
 def get_llm_client():
     if os.getenv("USE_MOCK_LLM", "").lower() == "true":
         return MockLLMClient()
@@ -12,4 +13,3 @@ def get_llm_client():
         max_tokens=int(os.getenv("OPENAI_MAX_TOKENS", 100)),
         timeout=int(os.getenv("OPENAI_TIMEOUT", 30)),
     )
-   

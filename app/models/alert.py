@@ -3,7 +3,6 @@ from typing import Dict, Optional
 
 
 class AlertIn(BaseModel):
-
     """
     Schema for incoming alert payloads.
     Follows common monitoring formats like Prometheus AlertManager.
@@ -16,7 +15,6 @@ class AlertIn(BaseModel):
 
 
 class AlertOut(BaseModel):
-    
     """
     Schema for the API response returned after summarization.
     Includes a unique alert ID and a human-readable summary.
@@ -24,4 +22,3 @@ class AlertOut(BaseModel):
 
     alert_id: str
     summary: str
-

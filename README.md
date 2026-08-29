@@ -1,23 +1,27 @@
 # LLM Backend Intelligence System
 
-LLM Backend Intelligence System is a production-ready backend service that transforms raw alerts from observability platforms into  incident summaries using large language models (LLMs). This project helps DevOps and SRE teams reduce alert fatigue, accelerate incident triage, and improve operational awareness across complex systems.
+LLM Backend Intelligence System is a backend service that transforms raw alerts from observability platforms into human-readable incident summaries using an LLM. It's built for DevOps and SRE teams who want to reduce alert fatigue and speed up triage by turning raw alert payloads into a plain-English explanation.
 
-> Ingest alerts → Enrich context using LLMs → Push summaries via API or Slack
+Ingest alert → Summarize with an LLM (mock or OpenAI) → Return the summary
 
----
+## Current status
+
+This is a working prototype, not a production deployment. The core alert-summarization flow is implemented and tested; the surrounding infrastructure described in [`system_design.md`](system_design.md) (async queue, persistence, Slack delivery) is the target architecture and is not yet built. See [Roadmap](#roadmap) below for what's planned vs. what's real today.
 
 ## Features
 
-- **FastAPI backend** for structured alert ingestion and retrieval
-- **LLM-powered summarization** using OpenAI or Gemini
-- **Asynchronous task queue** for background processing
-- **Slack and webhook integration** for real-time alert delivery
-- **Token usage and latency tracking** for every LLM call
-- **PostgreSQL storage** for audit history and traceability
-- **Dockerized environment** with CI/CD integration
-- **Ready for extensibility** via modular service layers
+**Implemented:**
+- FastAPI backend with a single alert-ingestion endpoint
+- LLM-powered summarization via OpenAI, with a mock LLM client for local development and testing (no API key or cost required)
+- Pydantic-validated request/response schemas
+- Test suite covering the happy path, validation errors, and a real-OpenAI integration test (skipped automatically without a live key)
 
----
+**Not yet implemented** (described in the architecture doc as planned, not current):
+- Asynchronous processing via Redis/Celery
+- PostgreSQL persistence — summaries are not currently stored or retrievable after the request completes
+- Slack/webhook delivery
+- Gemini support (OpenAI only, for now)
+- CI/CD pipeline
 
 ## Use Case
 
@@ -39,30 +43,32 @@ Send raw alert data from a monitoring system (e.g., Prometheus):
 
 Receive a summarized, LLM-generated explanation:
 
+```json
 {
   "summary": "Instance 'web-03' has been unresponsive for 5 minutes. This usually indicates a crash or network issue. Suggested action: SSH into the instance and check logs for nginx and systemd."
 }
+```
+
+With the mock LLM client, the response also includes simulated token usage and cost fields (`token_usage`, `cost_usd`). These are not currently populated on real OpenAI calls.
 
 ## Architecture Overview
 
-    - FastAPI handles RESTful alert ingestion and summary retrieval
-    - Celery + Redis manage alert processing and retries
-    - OpenAI or Gemini performs natural language summarization
-    - PostgreSQL stores alerts, summaries, and metrics
-    - SlackNotifier pushes summaries to relevant teams
+The current implementation is a synchronous request/response flow:
 
-See `system_design.md` for architectural details.
+- FastAPI receives and validates the alert via `POST /alerts/`
+- A pluggable `LLMClient` interface (mock or OpenAI, selected via environment variables) generates the summary
+- The summary is returned directly in the response — nothing is persisted or queued
+
+The originally planned architecture — an async queue (Redis/Celery), PostgreSQL storage, and a Slack/webhook notifier — is documented in [`system_design.md`](system_design.md) as the target design. That layer does not exist in the code yet.
 
 ## Get Started
 
 ### Prerequisites
 
 - Python 3.10+
-- Docker + Docker Compose
-- Redis (for queue)
-- PostgreSQL (or use Docker for everything)
+- An OpenAI API key (optional — the mock LLM client works without one)
 
-### Install 
+### Install
 
 ```bash
 # Clone the repo
@@ -75,117 +81,87 @@ source venv/bin/activate
 
 # Install dependencies
 pip install -r requirements.txt
+```
 
-# Start app (without queue)
+### Configure
+
+Copy the example env file and fill in your values:
+
+```bash
+cp .env.example .env
+```
+
+```env
+LLM_PROVIDER=openai
+USE_MOCK_LLM=true       # set to false to use a real OpenAI call
+OPENAI_API_KEY=your-openai-api-key-here
+OPENAI_MODEL=gpt-3.5-turbo
+OPENAI_TEMPERATURE=0.3
+OPENAI_TIMEOUT=10
+```
+
+Leave `USE_MOCK_LLM=true` to run and test the service with no API key and no cost.
+
+### Run
+
+```bash
 uvicorn app.main:app --reload
 ```
 
-## Run with Docker 
-
-The project includes a preconfigured docker-compose.yml file to simplify setup. This runs:
-
-- The FastAPI app
-- A Redis queue (for background task processing)
-- PostgreSQL (for storing alerts and summaries)
-(- Optional) A Celery worker container
-
-1. Build and start all services 
-
-```bash
-docker-compose up --build
-```
-
-This will:
-
-- Build the FastAPI app image
-- Pull and run Redis and PostgreSQL
-- Start all services on the correct ports
-
-2. Open in browser
-
-once running, visit :
-
+Then visit:
 - API docs: http://localhost:8000/docs
 - Health check: http://localhost:8000/health
 
-3. Setup for Docker
+> **Note:** `docker-compose.yml` currently exists but is empty — Docker support is planned but not yet implemented. Run the app directly with `uvicorn` for now.
 
-Make sure your `.env` file is placed at the project root. The `docker-compose.yml` automatically loads this.
+## API Reference
 
-```markdown
-OPENAI_API_KEY=your-key
-REDIS_URL=redis://redis:6379
-POSTGRES_URL=postgresql://postgres:postgres@db:5432/postgres
-SLACK_WEBHOOK_URL=https://hooks.slack.com/...
-LLM_PROVIDER=openai
+- `GET /health` — health check
+- `POST /alerts/` — ingest an alert and receive an LLM-generated summary
+
+## Project Structure
+
 ```
-## API reference
-
-Once running, visit:
-
-- OpenAPI Docs: `http://localhost:8000/docs`
-- Healthcheck: `GET /health`
-- Ingest alert: `POST /alerts`
-- Get summary: `GET /alerts/{alert_id}/summary`
-
-## Project structure
-
-```perl
 llm-backend-intelligence-system/
 ├── app/
-│   ├── routes/          # API endpoints
-│   ├── services/        # LLM, Notifier, Queue
-│   ├── models/          # Pydantic & DB models
-│   ├── tasks/           # Background workers
-│   └── main.py          # FastAPI app instance
-├── tests/               # Unit tests
-├── system_design.md     # Architecture & system planning
+│   ├── config/          # Settings (env-driven)
+│   ├── models/           # Alert data model
+│   ├── prompts/           # Prompt construction logic
+│   ├── routes/            # API endpoints (alerts)
+│   ├── schemas/           # Pydantic request/response schemas
+│   ├── services/           # LLM client interface + mock/OpenAI implementations
+│   └── main.py             # FastAPI app instance
+├── tests/                # Unit tests
+├── system_design.md      # Target architecture (see Current status above)
 ├── requirements.txt
 ├── Dockerfile
-├── docker-compose.yml
+├── docker-compose.yml     # Currently empty — see note above
 └── README.md
 ```
 
-## Testing 
+## Testing
 
-This project uses `pytest` for unit testing and is structured to support test-driven development (TDD) across the API, services, and task queue layers.
-
-### Run Tests
-
-To run all tests:
+This project uses `pytest`. Tests cover the health endpoint, alert creation (mock LLM), request validation, and a real-OpenAI integration test that's skipped automatically unless a valid `OPENAI_API_KEY` is set and `USE_MOCK_LLM=false`.
 
 ```bash
 pytest tests/
 ```
 
-or run a specific test file:
-
-```bash
-pytest tests/test_alert_ingest.py
-```
-
-## Test coverage report 
+With coverage:
 
 ```bash
 pip install pytest-cov
 pytest --cov=app tests/
 ```
 
-## Directory structure 
+## Roadmap
 
-```bash
-tests/
-├── conftest.py               # Shared fixtures
-├── test_alert_ingest.py      # Tests for POST /alerts
-├── test_summary_output.py    # LLM summarization tests (mocked)
-├── test_healthcheck.py       # Health route tests
-└── ...
-```
+Planned work to close the gap between this README and `system_design.md`:
 
-## Testing notes
-
-- Use `conftest.py` for reusable fixtures (e.g., test clients, mock DBs)
-- LLM calls should be mocked during tests to avoid API costs and rate limits
-- Background tasks can be tested with Celery’s `Eager` mode or `AsyncMock`
-- All API contract changes should include updated tests
-
+- [ ] CI pipeline (tests, dependency/secret/SAST scanning)
+- [ ] Basic auth / rate limiting on `POST /alerts/`
+- [ ] Async processing via Redis + Celery
+- [ ] PostgreSQL persistence and a real `GET /alerts/{id}/summary` endpoint
+- [ ] Slack/webhook delivery
+- [ ] Gemini support alongside OpenAI
+- [ ] Adversarial testing of the summarization endpoint (prompt injection via `annotations.description`) with documented findings and mitigations

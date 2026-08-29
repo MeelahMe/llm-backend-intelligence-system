@@ -121,6 +121,7 @@ Then visit:
 
 ## Project Structure
 
+```bash
 llm-backend-intelligence-system/
 ├── app/
 │   ├── config/          # Settings (env-driven)
@@ -136,8 +137,7 @@ llm-backend-intelligence-system/
 ├── Dockerfile
 ├── docker-compose.yml     # Currently empty — see note above
 └── README.md
-
-
+```
 ## Testing
 
 This project uses `pytest`. Tests cover the health endpoint, alert creation (mock LLM), request validation, and a real-OpenAI integration test that's skipped automatically unless a valid `OPENAI_API_KEY` is set and `USE_MOCK_LLM=false`.

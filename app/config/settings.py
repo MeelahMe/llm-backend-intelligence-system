@@ -13,6 +13,9 @@ class Settings(BaseSettings):
     openai_temperature: float = Field(0.3, env="OPENAI_TEMPERATURE")
     openai_timeout: int = Field(10, env="OPENAI_TIMEOUT")
 
+    # Auth
+    api_key: str = Field("", env="API_KEY")
+
     class Config:
         env_file = ".env"
 

@@ -21,6 +21,7 @@ jobs:
           USE_MOCK_LLM: "true"
           LLM_PROVIDER: mock
           OPENAI_API_KEY: sk-xxxx-ci-placeholder
+          API_KEY: ci-test-placeholder-key
 
   secrets-scan:
     runs-on: ubuntu-latest

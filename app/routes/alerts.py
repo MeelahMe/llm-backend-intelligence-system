@@ -1,7 +1,9 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends, Request
 from fastapi.responses import JSONResponse
 import traceback
 
+from app.auth import verify_api_key
+from app.rate_limit import limiter
 from app.schemas import Alert
 from app.services.factory import get_llm_client
 
@@ -9,8 +11,9 @@ router = APIRouter()
 llm = get_llm_client()
 
 
-@router.post("/alerts/")
-def create_alert(alert: Alert):
+@router.post("/alerts/", dependencies=[Depends(verify_api_key)])
+@limiter.limit("10/minute")
+def create_alert(request: Request, alert: Alert):
     try:
         result = llm.summarize_alert(
             source=alert.source,

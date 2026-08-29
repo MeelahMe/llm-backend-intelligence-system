@@ -1,7 +1,10 @@
 from fastapi.testclient import TestClient
+
+from app.config.settings import settings
 from app.main import app
 
 client = TestClient(app)
+AUTH_HEADERS = {"X-API-Key": settings.api_key}
 
 
 def test_create_alert():
@@ -12,7 +15,7 @@ def test_create_alert():
         "annotations": {"description": "CPU usage above 90% for 5 minutes"},
     }
 
-    response = client.post("/alerts/", json=payload)
+    response = client.post("/alerts/", json=payload, headers=AUTH_HEADERS)
     assert response.status_code == 200
 
     data = response.json()
@@ -35,6 +38,6 @@ def test_missing_required_field():
         "labels": {"instance": "web-01", "severity": "critical"},
     }
 
-    response = client.post("/alerts/", json=payload)
+    response = client.post("/alerts/", json=payload, headers=AUTH_HEADERS)
     assert response.status_code == 422  # Unprocessable Entity
     assert "detail" in response.json()

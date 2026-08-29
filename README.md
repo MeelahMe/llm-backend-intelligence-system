@@ -1,3 +1,4 @@
+cat > README.md << 'READMEEOF'
 # LLM Backend Intelligence System
 
 LLM Backend Intelligence System is a backend service that transforms raw alerts from observability platforms into human-readable incident summaries using an LLM. It's built for DevOps and SRE teams who want to reduce alert fatigue and speed up triage by turning raw alert payloads into a plain-English explanation.
@@ -121,7 +122,6 @@ Then visit:
 
 ## Project Structure
 
-```
 llm-backend-intelligence-system/
 ├── app/
 │   ├── config/          # Settings (env-driven)
@@ -137,7 +137,7 @@ llm-backend-intelligence-system/
 ├── Dockerfile
 ├── docker-compose.yml     # Currently empty — see note above
 └── README.md
-```
+
 
 ## Testing
 
@@ -165,3 +165,4 @@ Planned work to close the gap between this README and `system_design.md`:
 - [ ] Slack/webhook delivery
 - [ ] Gemini support alongside OpenAI
 - [ ] Adversarial testing of the summarization endpoint (prompt injection via `annotations.description`) with documented findings and mitigations
+READMEEOF

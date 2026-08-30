@@ -13,15 +13,17 @@ This is a working prototype, not a production deployment. The core alert-summari
 **Implemented:**
 - FastAPI backend with a single alert-ingestion endpoint
 - LLM-powered summarization via OpenAI, with a mock LLM client for local development and testing (no API key or cost required)
-- Pydantic-validated request/response schemas
-- Test suite covering the happy path, validation errors, and a real-OpenAI integration test (skipped automatically without a live key)
+- API key authentication and rate limiting (10 req/min) on `POST /alerts/`
+- Pydantic-validated request/response schemas, including a typed `AlertResponse`
+- CI pipeline: tests, gitleaks, Semgrep, Bandit, and a Trivy container scan on every push, all GitHub Actions pinned to commit SHA
+- Test suite covering the happy path, validation errors, auth (missing/wrong/valid key), the LLM-failure error path, and a real-OpenAI integration test (skipped automatically without a live key) - 85% coverage
+- **Documented prompt injection finding and fix** for the alert-summarization endpoint - see [Security](#security) below
 
 **Not yet implemented** (described in the architecture doc as planned, not current):
 - Asynchronous processing via Redis/Celery
 - PostgreSQL persistence — summaries are not currently stored or retrievable after the request completes
 - Slack/webhook delivery
 - Gemini support (OpenAI only, for now)
-- CI/CD pipeline
 
 ## Use Case
 
@@ -60,6 +62,12 @@ The current implementation is a synchronous request/response flow:
 - The summary is returned directly in the response — nothing is persisted or queued
 
 The originally planned architecture — an async queue (Redis/Celery), PostgreSQL storage, and a Slack/webhook notifier — is documented in [`system_design.md`](system_design.md) as the target design. That layer does not exist in the code yet.
+
+## Security
+
+`annotations.description` is fully attacker-controllable free text that reaches the LLM prompt. A real prompt injection vulnerability was found here, tested live against `gpt-3.5-turbo`, and fixed iteratively (the first mitigation attempt only partially closed the most dangerous attack vector; a second revision closed it, confirmed with repeated test runs).
+
+Full methodology, results, and honestly-scoped limitations: [`docs/security-findings.md`](docs/security-findings.md).
 
 ## Get Started
 
@@ -112,12 +120,12 @@ Then visit:
 - API docs: http://localhost:8000/docs
 - Health check: http://localhost:8000/health
 
-> **Note:** `docker-compose.yml` currently exists but is empty — Docker support is planned but not yet implemented. Run the app directly with `uvicorn` for now.
+> **Note:** The `Dockerfile` builds and runs correctly (`docker build -t llm-backend .`). `docker-compose.yml` is currently empty — a full Compose setup (with Redis/Postgres once those exist) is still planned.
 
 ## API Reference
 
 - `GET /health` — health check
-- `POST /alerts/` — ingest an alert and receive an LLM-generated summary
+- `POST /alerts/` — ingest an alert and receive an LLM-generated summary. Requires an `X-API-Key` header matching the server's configured `API_KEY`; unauthenticated or incorrect requests receive a 401. Rate-limited to 10 requests/minute per IP.
 
 ## Project Structure
 
@@ -125,13 +133,17 @@ Then visit:
 llm-backend-intelligence-system/
 ├── app/
 │   ├── config/          # Settings (env-driven)
-│   ├── models/           # Alert data model
-│   ├── prompts/           # Prompt construction logic
-│   ├── routes/            # API endpoints (alerts)
-│   ├── schemas/           # Pydantic request/response schemas
-│   ├── services/           # LLM client interface + mock/OpenAI implementations
+│   ├── routes/           # API endpoints (alerts)
+│   ├── schemas/          # Pydantic request/response schemas
+│   ├── services/         # LLM client interface + mock/OpenAI implementations
+│   ├── auth.py           # API key verification dependency
+│   ├── rate_limit.py      # slowapi rate limiter
 │   └── main.py             # FastAPI app instance
-├── tests/                # Unit tests
+├── tests/                # Unit tests (auth, error handling, alerts, health)
+├── scripts/              # Manual scripts (e.g. prompt injection PoC - not part of CI)
+├── docs/
+│   └── security-findings.md   # Prompt injection finding, fix, and results
+├── .github/workflows/security.yml   # CI: tests + gitleaks + Semgrep + Bandit + Trivy
 ├── system_design.md      # Target architecture (see Current status above)
 ├── requirements.txt
 ├── Dockerfile
@@ -157,10 +169,12 @@ pytest --cov=app tests/
 
 Planned work to close the gap between this README and `system_design.md`:
 
-- [ ] CI pipeline (tests, dependency/secret/SAST scanning)
-- [ ] Basic auth / rate limiting on `POST /alerts/`
+- [x] CI pipeline (tests, dependency/secret/SAST scanning)
+- [x] Basic auth / rate limiting on `POST /alerts/`
+- [x] Adversarial testing of the summarization endpoint (prompt injection via `annotations.description`) with documented findings and mitigations - see [Security](#security)
+- [ ] Automated adversarial scanning (e.g. Garak or PyRIT) added as a CI step, to catch prompt regressions automatically
+- [ ] Extend injection testing to the `source` and `alert` fields
 - [ ] Async processing via Redis + Celery
 - [ ] PostgreSQL persistence and a real `GET /alerts/{id}/summary` endpoint
 - [ ] Slack/webhook delivery
 - [ ] Gemini support alongside OpenAI
-- [ ] Adversarial testing of the summarization endpoint (prompt injection via `annotations.description`) with documented findings and mitigations
